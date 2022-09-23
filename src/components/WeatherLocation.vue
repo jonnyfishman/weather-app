@@ -204,7 +204,7 @@ export default {
     cursor:pointer;
     padding:0.4rem 0.6rem;
   }
-  .edit fieldset li:hover {
+  .edit fieldset li:hover, .edit fieldset li:focus {
     background: #f1c40f;
   }
 
