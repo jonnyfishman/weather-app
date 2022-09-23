@@ -16,10 +16,10 @@
                 @focusout="clickOutside"
                 tabindex="0"
         />
-        <button type="submit" @click="editMode = !editMode" />
+        <button tabindex="1" type="submit" @click="editMode = !editMode" />
         <ul v-if="locationOptions.length" id="locations" ref="locations">
           <li v-for="(location, index) in locationOptions"
-              :tabindex="index + 1"
+              :tabindex="index + 2"
               @click="updateLocation(location.name, location.country)"
               :key="location.id">
               {{location.name}} ({{ location.country }})
