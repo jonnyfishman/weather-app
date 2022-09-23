@@ -18,7 +18,12 @@
         />
         <button type="submit" @click="editMode = !editMode" />
         <ul v-if="locationOptions.length" id="locations" ref="locations">
-          <li v-for="location in locationOptions" @click="updateLocation(location.name, location.country)" :key="location.id">{{location.name}} ({{ location.country }})</li>
+          <li v-for="(location, index) in locationOptions"
+              :tabindex="index + 1"
+              @click="updateLocation(location.name, location.country)"
+              :key="location.id">
+              {{location.name}} ({{ location.country }})
+          </li>
         </ul>
       </fieldset>
     </form>
@@ -47,7 +52,6 @@ export default {
     async loadLocationOptions () {
       const response = await fetch('https://cities.jonsalmon.info?name=' + this.location)
       const data = await response.json()
-      console.log(data)
       this.locationOptions = data.data
     },
     adjustWidth (chars) {
@@ -60,7 +64,6 @@ export default {
       this.$refs.location_input.focus()
     },
     clickOutside () {
-      console.log(this.location)
       if (this.$refs.locations) this.$refs.location_input.focus()
       else {
         this.editMode = false
