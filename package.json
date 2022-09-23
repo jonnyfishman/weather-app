@@ -9,9 +9,11 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.2.0",
+    "all-the-cities-mongodb": "^1.0.1",
     "chart.js": "^3.9.1",
     "chartjs-plugin-datalabels": "^2.1.0",
     "core-js": "^3.25.1",
+    "mysql": "^2.18.1",
     "openweather-api-node": "^1.4.1",
     "vue": "^3.2.39",
     "vue-chartjs": "^4.1.1"
@@ -19,15 +21,13 @@
   "devDependencies": {
     "@babel/core": "^7.19.0",
     "@babel/eslint-parser": "^7.18.9",
+    "@rushstack/eslint-patch": "^1.2.0",
     "@vue/cli-plugin-babel": "^5.0.8",
     "@vue/cli-plugin-eslint": "^5.0.8",
     "@vue/cli-service": "^5.0.8",
-    "@vue/eslint-config-standard": "^6.1.0",
-    "eslint": "^7.32.0",
-    "eslint-plugin-import": "^2.25.3",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^5.1.0",
-    "eslint-plugin-vue": "^8.0.3"
+    "@vue/eslint-config-standard": "^8.0.1",
+    "eslint": "^8.23.1",
+    "eslint-plugin-vue": "^9.5.1"
   },
   "browserslist": [
     "> 1%",

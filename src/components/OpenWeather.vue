@@ -1,13 +1,14 @@
 <template>
   <div v-if='data.length'>
     <span>{{ weatherIcon(weather[0].icon) }}</span>
-    <h4>{{ weather[0].desc }}</h4>
-    <h2>{{ Math.round(data[0]) }}<i class="wi wi-thermometer"></i></h2>
+    <p>{{ weather[0].desc }}</p>
+    <p class="temperature">{{ Math.round(data[0]) }}<i class="wi wi-thermometer"></i></p>
 
   </div>
-  <div v-else>
-    <h2>Fetching weather data</h2>
+  <div v-else class="loading">
+    <p>Fetching weather data</p>
   </div>
+  <div id="preloadfont"></div>
   <Line :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '70%', margin: 'auto', padding: '2rem' }"/>
 </template>
 
@@ -234,21 +235,21 @@ export default {
 // ui https://miro.medium.com/max/1400/1*NDLtDsZaUVaEZapWAdpbww.png
 // pallette https://coolors.co/fffbdb-ffec51-3598db-ff674d-2f2f2f
 // add more data points but hide every odd etc
-// escape on edit leave
-// timezone amths possibly use moment.js
-// debounce autocomplete
+
+// timezone maths possibly use moment.js
+
 // https://andreybleme.com/2018-01-07/sharing-data-across-vuejs-components/
 </script>
 
 <!-- Add 'scoped' attribute to limit CSS to this component only -->
 <style scoped>
-@import "../assets/pe-icon-set-weather/css/pe-icon-set-weather.css";
+/*@import "../assets/pe-icon-set-weather/css/pe-icon-set-weather.css";*/
 @import "../assets/css/weather-icons.css";
 div {
   font-weight:inherit;
 }
 h2 {
-  font-size:6rem;
+  font-size:4rem;
   font-weight:400;
   margin:0;
 }
@@ -258,19 +259,35 @@ h2 i {
 }
 h4 {
   font-size:2rem;
+  font-weight:400;
   text-transform:capitalize;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0 0;
 }
 p {
   font-family:inherit;
-  font-size:3em;
+  font-size:2em;
   margin:0;
+  text-transform:capitalize;
+}
+p.temperature {
+  font-size:300%;
+}
+p.temperature i {
+  font-size:100%;
+  margin: auto auto 0.2em 0.2em;
 }
 h3 {
   margin: 40px 0 0;
 }
-span {
-  font-size:8rem;
+span, #preloadfont {
+  font-size:6rem;
   font-family:'weathericons';
+}
+.loading {
+  height:96px;
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
 }
 </style>

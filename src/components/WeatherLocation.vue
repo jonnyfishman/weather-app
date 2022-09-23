@@ -2,20 +2,23 @@
   <div class="header-group" :class="{ edit: editMode }">
     <form @submit.prevent='$emit("update:defaultLocation", this.location)'>
       <fieldset>
-        <legend for="location">Choose a new location</legend>
-        <input  id="location"
-                name="location"
+        <legend for="location_input">Choose a new location</legend>
+        <input  id="location_input"
+                name="location_input"
+                ref="location_input"
                 type="text"
                 @input="adjustWidth($event.target.value.length); loadLocationOptions()"
                 :style="{width: locationWidth}"
                 :disabled="!editMode"
                 v-model="location"
                 autocomplete="off"
-                @click="$event.target.value=null"
+                @keyup.esc="editMode = false"
+                @focusout="clickOutside"
+                tabindex="0"
         />
-        <button type="submit" @click="editMode = !editMode"/>
-        <ul v-if="locationOptions.length" id="locations">
-          <li v-for="location in locationOptions" @click="() => {this.location = `${location.name}, ${location.countryCode}`; adjustWidth((`${location.name},${location.countryCode}`).length); this.locationOptions = []}" :key="location.id">{{location.name}} ({{ location.countryCode }})</li>
+        <button type="submit" @click="editMode = !editMode" />
+        <ul v-if="locationOptions.length" id="locations" ref="locations">
+          <li v-for="location in locationOptions" @click="updateLocation(location.name, location.country)" :key="location.id">{{location.name}} ({{ location.country }})</li>
         </ul>
       </fieldset>
     </form>
@@ -42,13 +45,37 @@ export default {
   },
   methods: {
     async loadLocationOptions () {
-      const response = await fetch('http://geodb-free-service.wirefreethought.com/v1/geo/cities?limit=5&namePrefix=' + this.location)
+      const response = await fetch('https://cities.jonsalmon.info?name=' + this.location)
       const data = await response.json()
-
+      console.log(data)
       this.locationOptions = data.data
     },
     adjustWidth (chars) {
       this.locationWidth = Math.ceil(chars + 1 * 1.25) + 'ch'
+    },
+    updateLocation (name, country) {
+      this.location = `${name}, ${country}`
+      this.adjustWidth(this.location.length)
+      this.locationOptions = []
+      this.$refs.location_input.focus()
+    },
+    clickOutside () {
+      console.log(this.location)
+      if (this.$refs.locations) this.$refs.location_input.focus()
+      else {
+        this.editMode = false
+        this.$emit('update:defaultLocation', this.location)
+      }
+    }
+  },
+  watch: {
+    editMode: function () {
+      if (this.editMode === true) {
+        this.$nextTick(() => {
+          this.$refs.location_input.value = null
+          this.$refs.location_input.focus()
+        })
+      }
     }
   }
 }
@@ -111,25 +138,26 @@ export default {
   legend {
     display:none;
     position: absolute;
-    top: -2rem;
+    bottom: calc(-2rem - 15px);
     left: calc(50% - 100px);
     font-size: 1rem;
     background: #e84c3d;
-    border-radius: 2px;
-    padding: 0.6em;
-    width:200px;
+    border-radius: 5px;
+    padding: .6em;
+    width: 200px;
     text-align: center;
   }
   legend:after {
-    content:'';
+    content: "";
     width: 0;
     height: 0;
-    border-left: 10px solid transparent;
     border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
     position: absolute;
     left: calc(50% - 10px);
-    border-top: 10px solid #e84c3d;
-    bottom: -9px;
+    border-bottom: 10px solid #e84c3d;
+    top: -9px;
+    z-index: 999;
   }
   .edit legend {
     display:block;
@@ -139,7 +167,7 @@ export default {
     height:4rem;
     border:none;
     background: rgba(0,0,0,0) url(../assets/arrow.png) center center no-repeat;
-    border-bottom: rgba(0,0,0,) solid #fff;
+    /*border-bottom: rgba(0,0,0,) solid #fff;*/
     cursor:pointer;
     margin-left:-3.5rem;
     vertical-align: middle;
@@ -178,13 +206,13 @@ export default {
   }
 
   .header-group {
-    font-size:4rem;
+    font-size:3rem;
     position:relative;
     display:flex;
     margin:auto;
   }
   .header-group fieldset, .header-group form {
-    margin: auto auto 1rem auto;
+    margin: auto auto auto auto;
     outline:none;
     border:none;
     padding:0;
