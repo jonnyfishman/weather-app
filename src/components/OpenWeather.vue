@@ -9,7 +9,7 @@
     <p>Fetching weather data</p>
   </div>
   <div id="preloadfont"></div>
-  <Line :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '70%', margin: 'auto', padding: '2rem' }"/>
+  <Line v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '70%', margin: 'auto', padding: '2rem' }"/>
 </template>
 
 <script>
@@ -36,6 +36,7 @@ export default {
   },
   data () {
     return {
+      fontsLoaded: false,
       location: this.defaultLocation,
       weather: [],
       data: [],
@@ -227,6 +228,11 @@ export default {
   },
   async created () {
     await this.changeLocation()
+  },
+  mounted () {
+    document.fonts.ready.then(() => {
+      this.fontsLoaded = true
+    })
   }
 }
 
