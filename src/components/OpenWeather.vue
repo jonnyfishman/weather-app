@@ -1,15 +1,21 @@
 <template>
-  <div v-if='data.length'>
+  <div class="current-conditions" v-if='data.length'>
     <span>{{ weatherIcon(weather[0].icon) }}</span>
     <p>{{ weather[0].desc }}</p>
-    <p class="temperature">{{ Math.round(data[0]) }}<i class="wi wi-thermometer"></i></p>
+    <p>{{ Math.round(data[0]) }}<em class="wi wi-thermometer"></em></p>
 
   </div>
   <div v-else class="loading">
     <p>Fetching weather data</p>
   </div>
   <div id="preloadfont"></div>
-  <Line v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '70%', margin: 'auto', padding: '2rem' }"/>
+  <button @click="scroll(-50)" class="left">&lt;</button>
+  <button @click="scroll(+50)" class="right">&gt;</button>
+  <div class="chart-container" ref="scrollable">
+    <div class="chart-wrapper">
+        <Line v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '100%', height: '300px', margin: 'auto' }"/>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -36,6 +42,7 @@ export default {
   },
   data () {
     return {
+      scrollAmount: 0,
       fontsLoaded: false,
       location: this.defaultLocation,
       weather: [],
@@ -146,6 +153,12 @@ export default {
             display: false
           }
         },
+        layout: {
+          padding: {
+            left: 50,
+            right: 50
+          }
+        },
         responsive: true,
         maintainAspectRatio: false,
         animation: false
@@ -211,7 +224,7 @@ export default {
 
       if (err) return
 
-      weather.getHourlyForecast(6).then(dataPoints => {
+      weather.getHourlyForecast(12).then(dataPoints => {
         dataPoints.forEach((dataPoint, index) => {
           this.weather[index] = { desc: dataPoint.weather.description, icon: dataPoint.weather.icon.raw, time: dataPoint.dt.toString().split(' ')[4].split(':')[0] }
           this.data[index] = dataPoint.weather.temp.cur
@@ -221,6 +234,16 @@ export default {
 
       // console.log(this.weather)
       // weather.setLocationByName(this.location)
+    },
+    scroll: function (amount) {
+      const menu = this.$refs.scrollable
+
+      if (this.scrollAmount + amount >= 0 && this.scrollAmount + amount <= 950) {
+        menu.scrollTo({
+          left: this.scrollAmount += amount,
+          behavior: 'smooth'
+        })
+      }
     }
   },
   watch: {
@@ -249,51 +272,5 @@ export default {
 
 <!-- Add 'scoped' attribute to limit CSS to this component only -->
 <style scoped>
-/*@import "../assets/pe-icon-set-weather/css/pe-icon-set-weather.css";*/
-@import "../assets/css/weather-icons.css";
-div {
-  font-weight:inherit;
-}
-h2 {
-  font-size:4rem;
-  font-weight:400;
-  margin:0;
-}
-h2 i {
-  font-size:2rem;
-  margin: auto auto 0.2em 0.2em;
-}
-h4 {
-  font-size:2rem;
-  font-weight:400;
-  text-transform:capitalize;
-  margin: 0 0 0 0;
-}
-p {
-  font-family:inherit;
-  font-size:2em;
-  margin:0;
-  text-transform:capitalize;
-}
-p.temperature {
-  font-size:300%;
-}
-p.temperature i {
-  font-size:100%;
-  margin: auto auto 0.2em 0.2em;
-}
-h3 {
-  margin: 40px 0 0;
-}
-span, #preloadfont {
-  font-size:6rem;
-  font-family:'weathericons';
-}
-.loading {
-  height:96px;
-  display: flex;
-  flex-direction: column;
 
-  justify-content: center;
-}
 </style>
