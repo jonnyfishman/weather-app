@@ -258,16 +258,6 @@ export default {
     })
   }
 }
-
-// background color change with current weather
-// ui https://www.quotemaster.org/images/59/59373a1708ca193d355dff51fc7216b5.jpg
-// ui https://miro.medium.com/max/1400/1*NDLtDsZaUVaEZapWAdpbww.png
-// pallette https://coolors.co/fffbdb-ffec51-3598db-ff674d-2f2f2f
-// add more data points but hide every odd etc
-
-// timezone maths possibly use moment.js
-
-// https://andreybleme.com/2018-01-07/sharing-data-across-vuejs-components/
 </script>
 
 <!-- Add 'scoped' attribute to limit CSS to this component only -->
