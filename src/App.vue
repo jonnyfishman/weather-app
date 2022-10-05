@@ -32,8 +32,5 @@ export default {
   margin:0;
   font-weight:300;
 }
-body {
-  background-color:#3598db;
-  color:#FFFBDB;
-}
+
 </style>

@@ -8,14 +8,9 @@
   <div v-else class="loading">
     <p>Fetching weather data</p>
   </div>
-  <div id="preloadfont"></div>
-  <button @click="scroll(-50)" class="left">&lt;</button>
-  <button @click="scroll(+50)" class="right">&gt;</button>
-  <div class="chart-container" ref="scrollable">
-    <div class="chart-wrapper">
-        <Line v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '100%', height: '300px', margin: 'auto' }"/>
-    </div>
-  </div>
+  <div id="preloadfont">&nbsp;</div>
+  <Line v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '100%', height: '200px', margin: '2em auto auto' }"/>
+  <div class="footer">* data shown for two hourly intervals</div>
 </template>
 
 <script>
@@ -44,6 +39,7 @@ export default {
     return {
       scrollAmount: 0,
       fontsLoaded: false,
+      defaultBackground: '#185D8C',
       location: this.defaultLocation,
       weather: [],
       data: [],
@@ -81,9 +77,9 @@ export default {
             backgroundColor: '#fff',
             pointRadius: function (value, ctx) {
               return value.dataset.data.map((point, index, values) => {
-                const max = Math.max(...values)
-                const min = Math.min(...values)
-                return point === max || point === min ? 6 : 0
+                const max = Math.max(...values.slice(1, -1))
+                const min = Math.min(...values.slice(1, -1))
+                return point === max || point === min ? 5 : 0
               })
             },
             datalabels: {
@@ -91,13 +87,13 @@ export default {
                 label: {
                   align: 'top',
                   formatter: function (value, ctx) {
-                    return value === Math.min(...ctx.chart.data.datasets[0].data) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
+                    return value === Math.min(...ctx.chart.data.datasets[0].data.slice(1, -1)) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
                   }
                 },
                 value: {
                   align: 'bottom',
                   formatter: function (value, ctx) {
-                    return value === Math.max(...ctx.chart.data.datasets[0].data) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
+                    return value === Math.max(...ctx.chart.data.datasets[0].data.slice(1, -1)) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
                   }
                 },
                 index: null
@@ -111,10 +107,10 @@ export default {
       return {
         elements: {
           line: {
-            borderColor: '#FFFBDB',
+            borderColor: '#fff',
             fill: true,
-            backgroundColor: '#ff6633',
-            tension: 0.7
+            borderWidth: 2,
+            tension: 0.5
           }
         },
         plugins: {
@@ -124,7 +120,7 @@ export default {
           datalabels: {
             color: '#fff',
             font: {
-              size: 24,
+              size: 18,
               family: '"weathericons", "Quicksand", sans-serif'
             },
             padding: 14
@@ -141,11 +137,12 @@ export default {
             ticks: {
               color: '#fff',
               font: {
-                size: 28,
+                size: 20,
                 family: '"weathericons", "Quicksand", sans-serif'
               },
               callback: (label, index) => {
-                return [this.weather[index].time + ':00', this.weatherIcon(this.weather[index].icon), this.windDirection(this.labels[index].dir), this.toBeaufort(this.labels[index].speed)]
+                if (index % 2 === 0) return
+                return [this.weatherIcon(this.weather[index].icon), this.windDirection(this.labels[index].dir), this.toBeaufort(this.labels[index].speed)]
               }
             }
           },
@@ -154,10 +151,7 @@ export default {
           }
         },
         layout: {
-          padding: {
-            left: 50,
-            right: 50
-          }
+          padding: 0
         },
         responsive: true,
         maintainAspectRatio: false,
@@ -224,7 +218,7 @@ export default {
 
       if (err) return
 
-      weather.getHourlyForecast(12).then(dataPoints => {
+      weather.getHourlyForecast(11).then(dataPoints => {
         dataPoints.forEach((dataPoint, index) => {
           this.weather[index] = { desc: dataPoint.weather.description, icon: dataPoint.weather.icon.raw, time: dataPoint.dt.toString().split(' ')[4].split(':')[0] }
           this.data[index] = dataPoint.weather.temp.cur
@@ -232,6 +226,21 @@ export default {
         })
       })
 
+      const current = await weather.getCurrent({ units: 'metric' })
+
+      if (Date.now() / 1000 > current.astronomical.sunset_raw && Date.now() / 1000 < current.astronomical.sunrise_raw + Math.pow(8.64, 7)) {
+        if (this.weather[0].desc.indexOf('clear') > -1) {
+          document.body.style.backgroundColor = '#222'
+        } else {
+          document.body.style.backgroundColor = '#444'
+        }
+      } else {
+        if (this.weather[0].desc.indexOf('clear') > -1 && Math.round(this.data[0]) > 16) {
+          document.body.style.backgroundColor = '#d3273e'
+        } else {
+          document.body.style.backgroundColor = this.defaultBackground
+        }
+      }
       // console.log(this.weather)
       // weather.setLocationByName(this.location)
     },
