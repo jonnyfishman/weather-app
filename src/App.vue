@@ -28,9 +28,5 @@ export default {
   font-family: 'Quicksand', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  margin:0;
-  font-weight:300;
 }
-
 </style>

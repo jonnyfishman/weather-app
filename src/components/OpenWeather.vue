@@ -1,25 +1,27 @@
 <template>
-  <div class="current-conditions" v-if='data.length'>
-    <span>{{ weatherIcon(weather[0].icon) }}</span>
-    <p>{{ weather[0].desc }}</p>
-    <p>{{ Math.round(data[0]) }}<em class="wi wi-thermometer"></em></p>
+  <div class="chart">
+    <div class="current-conditions" v-if='dataCurrent.length'>
+      <span>{{ weatherIcon(weather[0].icon) }}</span>
+      <p>{{ weather[0].desc }}</p>
+      <p>{{ Math.round(dataCurrent[0]) }}<em class="wi wi-thermometer"></em></p>
 
+    </div>
+    <div v-else class="loading">
+      <p>Fetching weather data</p>
+    </div>
+    <div id="preloadfont">&nbsp;</div>
+    <Line id="chart" v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" />
+    <div class="footer">&#10035; data shown for two hourly intervals</div>
   </div>
-  <div v-else class="loading">
-    <p>Fetching weather data</p>
-  </div>
-  <div id="preloadfont">&nbsp;</div>
-  <Line v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :styles="{ width: '100%', height: '200px', margin: '2em auto auto' }"/>
-  <div class="footer">* data shown for two hourly intervals</div>
 </template>
 
 <script>
 import OpenWeatherAPI from 'openweather-api-node'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
 import { Line } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Legend, LineElement, PointElement, CategoryScale, LinearScale } from 'chart.js'
+import { Chart as ChartJS, Title, Legend, LineElement, PointElement, CategoryScale, LinearScale, Filler } from 'chart.js'
 
-ChartJS.register(Title, Legend, LineElement, PointElement, CategoryScale, LinearScale, ChartDataLabels)
+ChartJS.register(Title, Legend, LineElement, PointElement, CategoryScale, LinearScale, ChartDataLabels, Filler)
 
 const weather = new OpenWeatherAPI({
   key: '1835dad453aa19a5d4dba6d784dc52c3',
@@ -40,9 +42,11 @@ export default {
       scrollAmount: 0,
       fontsLoaded: false,
       defaultBackground: '#185D8C',
+      pointBackgroundColor: '#18618c',
       location: this.defaultLocation,
       weather: [],
-      data: [],
+      dataCurrent: [],
+      dataPast: [],
       labels: [],
       pointRadius: [],
       iconMapping: { // need to map night time codes
@@ -73,13 +77,24 @@ export default {
         labels: this.labels,
         datasets: [
           {
-            data: this.data,
-            backgroundColor: '#fff',
+            data: this.dataCurrent,
+            borderColor: '#fff',
+            borderWidth: 2,
+            tension: 0.5,
+            pointBackgroundColor: this.pointBackgroundColor,
+            pointBorderColor: '#fff',
             pointRadius: function (value, ctx) {
               return value.dataset.data.map((point, index, values) => {
                 const max = Math.max(...values.slice(1, -1))
                 const min = Math.min(...values.slice(1, -1))
-                return point === max || point === min ? 5 : 0
+                return point === max || point === min ? 4 : 0
+              })
+            },
+            pointBorderWidth: function (value, ctx) {
+              return value.dataset.data.map((point, index, values) => {
+                const max = Math.max(...values.slice(1, -1))
+                const min = Math.min(...values.slice(1, -1))
+                return point === max || point === min ? 2 : 0
               })
             },
             datalabels: {
@@ -99,20 +114,27 @@ export default {
                 index: null
               }
             }
+          },
+          {
+            data: this.dataPast,
+            fill: 'start',
+            borderWidth: 0,
+            tension: 0.5,
+            pointRadius: 0,
+            backgroundColor: 'rgb(100, 100, 100, 0.1)',
+            datalabels: {
+              labels: {
+                label: null,
+                value: null,
+                index: null
+              }
+            }
           }
         ]
       }
     },
     chartOptions () {
       return {
-        elements: {
-          line: {
-            borderColor: '#fff',
-            fill: true,
-            borderWidth: 2,
-            tension: 0.5
-          }
-        },
         plugins: {
           legend: {
             display: false
@@ -125,6 +147,19 @@ export default {
             },
             padding: 14
           }
+          /*
+          title: {
+            text: String.fromCharCode('0x2733') + ' data shown for two hourly intervals',
+            display: true,
+            position: 'bottom',
+            padding: 6,
+            color: '#fff',
+            font: {
+              size: 14,
+              family: '"Quicksand", sans-serif'
+            }
+          }
+          */
         },
         scales: {
           x: {
@@ -154,8 +189,15 @@ export default {
           padding: 0
         },
         responsive: true,
+        clip: false,
         maintainAspectRatio: false,
-        animation: false
+        animation: false,
+        tooltips: {
+          enabled: false
+        },
+        hover: {
+          mode: null
+        }
       }
     }
   },
@@ -221,24 +263,33 @@ export default {
       weather.getHourlyForecast(11).then(dataPoints => {
         dataPoints.forEach((dataPoint, index) => {
           this.weather[index] = { desc: dataPoint.weather.description, icon: dataPoint.weather.icon.raw, time: dataPoint.dt.toString().split(' ')[4].split(':')[0] }
-          this.data[index] = dataPoint.weather.temp.cur
+          this.dataCurrent[index] = dataPoint.weather.temp.cur
           this.labels[index] = { speed: dataPoint.weather.wind.speed, dir: dataPoint.weather.wind.deg }
         })
       })
 
-      const current = await weather.getCurrent({ units: 'metric' })
+      const current = await weather.getHistory(new Date().getTime() - 6000, { units: 'metric' })
 
-      if (Date.now() / 1000 > current.astronomical.sunset_raw && Date.now() / 1000 < current.astronomical.sunrise_raw + Math.pow(8.64, 7)) {
+      this.dataPast = current.hourly.slice(-11).map(dataPoint => {
+        return dataPoint.weather.temp.cur
+      })
+      // const current = await weather.getCurrent({ units: 'metric' })
+
+      if (Date.now() / 1000 > current.current.astronomical.sunset_raw && Date.now() / 1000 < current.current.astronomical.sunrise_raw + Math.pow(8.64, 7) && this.weather[0]) {
         if (this.weather[0].desc.indexOf('clear') > -1) {
           document.body.style.backgroundColor = '#222'
+          this.pointBackgroundColor = '#222'
         } else {
           document.body.style.backgroundColor = '#444'
+          this.pointBackgroundColor = '#444'
         }
-      } else {
-        if (this.weather[0].desc.indexOf('clear') > -1 && Math.round(this.data[0]) > 16) {
+      } else if (this.weather[0]) {
+        if (this.weather[0].desc.indexOf('clear') > -1 && Math.round(this.dataCurrent[0]) > 16) {
           document.body.style.backgroundColor = '#d3273e'
+          this.pointBackgroundColor = '#d3273e'
         } else {
           document.body.style.backgroundColor = this.defaultBackground
+          this.pointBackgroundColor = '#18618c'
         }
       }
       // console.log(this.weather)
@@ -265,9 +316,11 @@ export default {
     document.fonts.ready.then(() => {
       this.fontsLoaded = true
     })
+    // console.log(this.data, this.labels)
   }
 }
 
+// custom tooltip key
 // background color change with current weather
 // ui https://www.quotemaster.org/images/59/59373a1708ca193d355dff51fc7216b5.jpg
 // ui https://miro.medium.com/max/1400/1*NDLtDsZaUVaEZapWAdpbww.png

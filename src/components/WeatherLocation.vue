@@ -1,34 +1,36 @@
 <template>
-  <div class="header-group" :class="{ edit: editMode }">
-    <form @submit.prevent='$emit("update:defaultLocation", this.location)'>
-      <fieldset>
-        <legend for="location_input">Choose a new location</legend>
-        <input  id="location_input"
-                name="location_input"
-                ref="location_input"
-                type="text"
-                @input="adjustWidth($event.target.value.length); loadLocationOptions()"
-                :style="{width: locationWidth}"
-                :disabled="!editMode"
-                v-model="location"
-                autocomplete="off"
-                @keyup.esc="editMode = false"
-                @focusout="clickOutside"
-                tabindex="0"
-        />
-        <button tabindex="1" type="submit" @click="editMode = !editMode" />
+  <div class="location">
+    <div class="header-group" :class="{ edit: editMode }">
+      <form @submit.prevent='$emit("update:defaultLocation", this.location)'>
+        <fieldset>
+          <legend for="location_input">Choose a new location</legend>
+          <input  id="location_input"
+                  name="location_input"
+                  ref="location_input"
+                  type="text"
+                  @input="adjustWidth($event.target.value.length); loadLocationOptions()"
+                  :style="{width: locationWidth}"
+                  :disabled="!editMode"
+                  v-model="location"
+                  autocomplete="off"
+                  @keyup.esc="editMode = false"
+                  @focusout="clickOutside"
+                  tabindex="0"
+          />
+          <button tabindex="1" type="submit" @click="editMode = !editMode" />
 
-      </fieldset>
+        </fieldset>
 
-    </form>
-    <ul v-if="locationOptions.length" id="locations" ref="locations">
-      <li v-for="(location, index) in locationOptions"
-          :tabindex="index + 2"
-          @click="updateLocation(location.name, location.country)"
-          :key="location.id">
-          {{location.name}} ({{ location.country }})
-      </li>
-    </ul>
+      </form>
+      <ul v-if="locationOptions.length" id="locations" ref="locations">
+        <li v-for="(location, index) in locationOptions"
+            :tabindex="index + 2"
+            @click="updateLocation(location.name, location.country)"
+            :key="location.id">
+            {{location.name}} ({{ location.country }})
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 

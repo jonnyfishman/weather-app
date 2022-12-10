@@ -15,6 +15,7 @@ body {
   font-weight:300;
   background-color:#185D8C;
   color:#fff;
+  transition: 0.5s;
 }
 div {
   font-weight:inherit;
@@ -73,6 +74,36 @@ span, #preloadfont {
   height:0;
   width:0;
 }
+
+#app {
+  text-align: center;
+  margin:0;
+  font-weight:300;
+  display:flex;
+  flex-direction:column;
+  transition: 0.5s;
+  height:100vh;
+  /*min-height: 900px;*/
+}
+
+.location {
+  flex:0 0 auto;
+}
+.chart {
+ flex: 1 0 auto;
+}
+.chart {
+  display:flex;
+  flex-direction:column;
+
+}
+#chart {
+  width: 100%;
+  height: 200px;
+  margin: 3em auto auto;
+  flex: 1 0 auto;
+}
+
 .current-conditions {
 margin-top:1em;
 }
@@ -233,6 +264,8 @@ transform: translateX(-50%)
 }
 
 .footer {
-  margin-top:1em;
+  padding:0.4em;
   font-size:0.9em;
+  background-color: rgb(100, 100, 100, 0.1);
+  margin-top:-1px;
 }
