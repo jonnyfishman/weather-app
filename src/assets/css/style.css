@@ -83,29 +83,30 @@ span, #preloadfont {
   flex-direction:column;
   transition: 0.5s;
   height:100vh;
-  /*min-height: 900px;*/
+  min-height: 900px;
+  overflow:hidden;
+
 }
 
 .location {
-  flex:0 0 auto;
+  flex:0 0 10%;
 }
 .chart {
- flex: 1 0 auto;
-}
-.chart {
+ flex: 0 0 90%;
   display:flex;
   flex-direction:column;
-
+  justify-content: space-between;
+}
+.chart div {
+  flex:0 0 auto;
+  padding-top:2em;
 }
 #chart {
-  width: 100%;
-  height: 200px;
-  margin: 3em auto auto;
-  flex: 1 0 auto;
+height:100%;
 }
 
 .current-conditions {
-margin-top:1em;
+
 }
 p:last-child {
   font-size:2.4em;
@@ -261,11 +262,4 @@ transform: translateX(-50%)
   background:transparent;
   color:#fff;
   font-size:3em;
-}
-
-.footer {
-  padding:0.4em;
-  font-size:0.9em;
-  background-color: rgb(100, 100, 100, 0.1);
-  margin-top:-1px;
 }

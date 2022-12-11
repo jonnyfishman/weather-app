@@ -9,10 +9,11 @@
     <div v-else class="loading">
       <p>Fetching weather data</p>
     </div>
-    <div id="preloadfont">&nbsp;</div>
-    <Line id="chart" v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" />
-    <div class="footer">&#10035; data shown for two hourly intervals</div>
+    <div>
+      <Line id="chart" v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :plugins="[chartPlugins]"/>
+    </div>
   </div>
+  <div id="preloadfont">&nbsp;</div>
 </template>
 
 <script>
@@ -101,14 +102,14 @@ export default {
               labels: {
                 label: {
                   align: 'top',
-                  formatter: function (value, ctx) {
-                    return value === Math.min(...ctx.chart.data.datasets[0].data.slice(1, -1)) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
+                  formatter: function (value, ctx, index) {
+                    return (value === Math.min(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
                   }
                 },
                 value: {
                   align: 'bottom',
-                  formatter: function (value, ctx) {
-                    return value === Math.max(...ctx.chart.data.datasets[0].data.slice(1, -1)) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
+                  formatter: function (value, ctx, index) {
+                    return (value === Math.max(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
                   }
                 },
                 index: null
@@ -121,7 +122,7 @@ export default {
             borderWidth: 0,
             tension: 0.5,
             pointRadius: 0,
-            backgroundColor: 'rgb(100, 100, 100, 0.1)',
+            backgroundColor: 'rgb(200, 200, 200, 0.5)',
             datalabels: {
               labels: {
                 label: null,
@@ -147,19 +148,6 @@ export default {
             },
             padding: 14
           }
-          /*
-          title: {
-            text: String.fromCharCode('0x2733') + ' data shown for two hourly intervals',
-            display: true,
-            position: 'bottom',
-            padding: 6,
-            color: '#fff',
-            font: {
-              size: 14,
-              family: '"Quicksand", sans-serif'
-            }
-          }
-          */
         },
         scales: {
           x: {
@@ -182,7 +170,8 @@ export default {
             }
           },
           y: {
-            display: false
+            display: false,
+            grace: '3%'
           }
         },
         layout: {
@@ -193,10 +182,24 @@ export default {
         maintainAspectRatio: false,
         animation: false,
         tooltips: {
-          enabled: false
+          enabled: true
         },
         hover: {
           mode: null
+        }
+      }
+    },
+    chartPlugins () {
+      return {
+        id: 'instrucitons',
+        afterRender: chart => {
+          const ctx = chart.ctx
+          // console.log(chart.width, chart.height, chart.layers)
+          ctx.textAlign = 'center'
+          ctx.fillStyle = 'white'
+          ctx.font = 'bold 16px Quicksand'
+          ctx.fillText(String.fromCharCode(0x2733) + ' data shown for two hourly intervals', chart.width / 2, chart.height - 20)
+          ctx.restore()
         }
       }
     }
@@ -268,14 +271,24 @@ export default {
         })
       })
 
-      const current = await weather.getHistory(new Date().getTime() - 6000, { units: 'metric' })
+      const today = await weather.getHistory(new Date().getTime() - 6000, { units: 'metric' })
 
-      this.dataPast = current.hourly.slice(-11).map(dataPoint => {
+      this.dataPast = today.hourly.slice(-11).map(dataPoint => {
+        // console.log(dataPoint.dt, dataPoint.weather.temp.cur)
         return dataPoint.weather.temp.cur
       })
-      // const current = await weather.getCurrent({ units: 'metric' })
+      if (this.dataPast.length < 11) {
+        const yesterday = await weather.getHistory(new Date().getTime() - 86400000, { units: 'metric' }).slice(this.dataPast.length - 11).map(dataPoint => {
+          // console.log(dataPoint.dt, dataPoint.weather.temp.cur)
+          return dataPoint.weather.temp.cur
+        })
+        this.dataPast = yesterday.concat(this.dataPast)
+      }
+      // console.log(this.dataPast)
 
-      if (Date.now() / 1000 > current.current.astronomical.sunset_raw && Date.now() / 1000 < current.current.astronomical.sunrise_raw + Math.pow(8.64, 7) && this.weather[0]) {
+      const current = await weather.getCurrent({ units: 'metric' })
+
+      if (Date.now() / 1000 > current.astronomical.sunset_raw && Date.now() / 1000 < current.astronomical.sunrise_raw + Math.pow(8.64, 7) && this.weather[0]) {
         if (this.weather[0].desc.indexOf('clear') > -1) {
           document.body.style.backgroundColor = '#222'
           this.pointBackgroundColor = '#222'
@@ -316,7 +329,6 @@ export default {
     document.fonts.ready.then(() => {
       this.fontsLoaded = true
     })
-    // console.log(this.data, this.labels)
   }
 }
 
