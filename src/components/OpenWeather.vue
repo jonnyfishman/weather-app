@@ -10,7 +10,7 @@
       <p>Fetching weather data</p>
     </div>
     <div>
-      <Line id="chart" v-if="fontsLoaded" :chart-data="chartData" :chart-options="chartOptions" :plugins="[chartPlugins]"/>
+      <Line id="chart" v-if="fontsLoaded && dataLoaded" :chart-data="chartData" :chart-options="chartOptions" :plugins="[chartPlugins]"/>
     </div>
   </div>
   <div id="preloadfont">&nbsp;</div>
@@ -42,6 +42,7 @@ export default {
     return {
       scrollAmount: 0,
       fontsLoaded: false,
+      dataLoaded: false,
       defaultBackground: '#185D8C',
       pointBackgroundColor: '#18618c',
       location: this.defaultLocation,
@@ -50,25 +51,25 @@ export default {
       dataPast: [],
       labels: [],
       pointRadius: [],
-      iconMapping: { // need to map night time codes
-        '01d': '0xf00d', // clear sky
-        '02d': '0xf002', // few clouds
-        '03d': '0xf07d', // scattered clouds
-        '04d': '0xf013', // broken clouds
-        '09d': '0xf009', // shower rain
-        '10d': '0xf008', // rain
-        '11d': '0xf010', // thunderstorm
-        '13d': '0xf00a', // snow
-        '50d': '0xf014', // mist
-        '01n': '0xf02e', // clear sky
-        '02n': '0xf07e', // few clouds
-        '03n': '0xf086', // scattered clouds
-        '04n': '0xf013', // broken clouds
-        '09n': '0xf029', // shower rain
-        '10n': '0xf028', // rain
-        '11n': '0xf02d', // thunderstorm
-        '13n': '0xf02a', // snow
-        '50n': '0xf014' // mist
+      iconMapping: {
+        '01d': '0xf00d', // clear sky - wi-day-sunny
+        '02d': '0xf002', // few clouds - wi-day-cloudy
+        '03d': '0xf07d', // scattered clouds - wi-day-cloudy-high
+        '04d': '0xf013', // broken clouds - wi-cloudy
+        '09d': '0xf009', // shower rain - wi-day-showers
+        '10d': '0xf008', // rain - wi-day-rain
+        '11d': '0xf010', // thunderstorm - wi-day-thunderstorm
+        '13d': '0xf00a', // snow - wi-day-snow
+        '50d': '0xf014', // mist - wi-fog
+        '01n': '0xf02e', // clear sky - wi-night-clear
+        '02n': '0xf07e', // few clouds - wi-night-alt-cloudy-high
+        '03n': '0xf086', // scattered clouds - wi-night-alt-cloudy
+        '04n': '0xf031', // broken clouds - wi-night-cloudy
+        '09n': '0xf029', // shower rain - wi-night-alt-showers
+        '10n': '0xf028', // rain - wi-night-alt-rain
+        '11n': '0xf02d', // thunderstorm - wi-night-alt-thunderstorm
+        '13n': '0xf02a', // snow - wi-night-alt-snow
+        '50n': '0xf04a' // mist - wi-night-fog
       }
     }
   },
@@ -81,7 +82,7 @@ export default {
             data: this.dataCurrent,
             borderColor: '#fff',
             borderWidth: 2,
-            tension: 0.5,
+            tension: 0.3,
             pointBackgroundColor: this.pointBackgroundColor,
             pointBorderColor: '#fff',
             pointRadius: function (value, ctx) {
@@ -103,30 +104,15 @@ export default {
                 label: {
                   align: 'top',
                   formatter: function (value, ctx, index) {
-                    return (value === Math.min(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
+                    return (value === Math.min(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xb0') : null
                   }
                 },
                 value: {
                   align: 'bottom',
                   formatter: function (value, ctx, index) {
-                    return (value === Math.max(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xf03c') : null
+                    return (value === Math.max(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xb0') : null
                   }
                 },
-                index: null
-              }
-            }
-          },
-          {
-            data: this.dataPast,
-            fill: 'start',
-            borderWidth: 0,
-            tension: 0.5,
-            pointRadius: 0,
-            backgroundColor: 'rgb(200, 200, 200, 0.5)',
-            datalabels: {
-              labels: {
-                label: null,
-                value: null,
                 index: null
               }
             }
@@ -143,8 +129,8 @@ export default {
           datalabels: {
             color: '#fff',
             font: {
-              size: 18,
-              family: '"weathericons", "Quicksand", sans-serif'
+              size: 20,
+              family: '"Quicksand", sans-serif'
             },
             padding: 14
           }
@@ -152,7 +138,14 @@ export default {
         scales: {
           x: {
             grid: {
-              display: false,
+              display: true,
+              color: function (context) {
+                if (context.tick.value % 2 === 0) {
+                  return '#f2f2f233'
+                } else {
+                  return '#ffffff00'
+                }
+              },
               drawBorder: false
             },
             display: true,
@@ -160,22 +153,24 @@ export default {
             ticks: {
               color: '#fff',
               font: {
-                size: 20,
+                size: 0,
                 family: '"weathericons", "Quicksand", sans-serif'
               },
-              callback: (label, index) => {
-                if (index % 2 === 0) return
-                return [this.weatherIcon(this.weather[index].icon), this.windDirection(this.labels[index].dir), this.toBeaufort(this.labels[index].speed)]
-              }
+              display: false
             }
           },
           y: {
             display: false,
-            grace: '3%'
+            grace: '4%'
           }
         },
         layout: {
-          padding: 0
+          padding: {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0
+          }
         },
         responsive: true,
         clip: false,
@@ -194,7 +189,18 @@ export default {
         id: 'instrucitons',
         afterRender: chart => {
           const ctx = chart.ctx
-          // console.log(chart.width, chart.height, chart.layers)
+          // console.log(chart.scales.x.ticks)
+          ctx.textAlign = 'center'
+          ctx.fillStyle = 'white'
+          ctx.font = 'bold 16px weathericons'
+
+          chart.scales.x.ticks.forEach((tick, index, ticks) => {
+            if (index !== 0 && index !== ticks.length && index !== ticks.length - 1) {
+              ctx.fillText(tick.label, (chart.width / (ticks.length - 1)) * index, 20)
+            }
+          })
+          ctx.restore()
+
           ctx.textAlign = 'center'
           ctx.fillStyle = 'white'
           ctx.font = 'bold 16px Quicksand'
@@ -210,21 +216,21 @@ export default {
     },
     windDirection (dir) {
       if (dir > 337.5 || dir <= 22.5) {
-        return String.fromCharCode(0xf044) // from N
+        return String.fromCharCode(0xf044) + 'N' // from N
       } else if (dir > 22.5 && dir <= 67.5) {
-        return String.fromCharCode(0xf043)
+        return String.fromCharCode(0xf043) + 'NE'
       } else if (dir > 67.5 && dir <= 112.5) {
-        return String.fromCharCode(0xf048) // from E
+        return String.fromCharCode(0xf048) + 'E' // from E
       } else if (dir > 112.5 && dir <= 157.5) {
-        return String.fromCharCode(0xf087)
+        return String.fromCharCode(0xf087) + 'SE'
       } else if (dir > 157.5 && dir <= 202.5) {
-        return String.fromCharCode(0xf058)
+        return String.fromCharCode(0xf058) + 'S'
       } else if (dir > 202.5 && dir <= 247.5) {
-        return String.fromCharCode(0xf057)
+        return String.fromCharCode(0xf057) + 'SW'
       } else if (dir > 247.5 && dir <= 292.5) {
-        return String.fromCharCode(0xf04d)
+        return String.fromCharCode(0xf04d) + 'W'
       } else if (dir > 292.5 && dir <= 337.5) {
-        return String.fromCharCode(0xf088)
+        return String.fromCharCode(0xf088) + 'NW'
       } else {
         return null
       }
@@ -263,28 +269,29 @@ export default {
 
       if (err) return
 
-      weather.getHourlyForecast(11).then(dataPoints => {
-        dataPoints.forEach((dataPoint, index) => {
-          this.weather[index] = { desc: dataPoint.weather.description, icon: dataPoint.weather.icon.raw, time: dataPoint.dt.toString().split(' ')[4].split(':')[0] }
-          this.dataCurrent[index] = dataPoint.weather.temp.cur
-          this.labels[index] = { speed: dataPoint.weather.wind.speed, dir: dataPoint.weather.wind.deg }
-        })
-      })
+      const tomorrow = await weather.getHourlyForecast(12)
 
+      let yesterday = []
       const today = await weather.getHistory(new Date().getTime() - 6000, { units: 'metric' })
 
-      this.dataPast = today.hourly.slice(-11).map(dataPoint => {
-        // console.log(dataPoint.dt, dataPoint.weather.temp.cur)
-        return dataPoint.weather.temp.cur
-      })
-      if (this.dataPast.length < 11) {
-        const yesterday = await weather.getHistory(new Date().getTime() - 86400000, { units: 'metric' }).slice(this.dataPast.length - 11).map(dataPoint => {
-          // console.log(dataPoint.dt, dataPoint.weather.temp.cur)
-          return dataPoint.weather.temp.cur
-        })
-        this.dataPast = yesterday.concat(this.dataPast)
+      if (today.length < 14) {
+        yesterday = await weather.getHistory(new Date().getTime() - 86400000, { units: 'metric' })
       }
-      // console.log(this.dataPast)
+
+      yesterday.slice(today - 12).concat(today.hourly.slice(-14), tomorrow.slice(1)).forEach((dataPoint, index) => {
+        // if (index % 2 !== 0) {
+        this.weather.push({ desc: dataPoint.weather.description, icon: dataPoint.weather.icon.raw, time: dataPoint.dt.toString().split(' ')[4].split(':')[0] })
+        this.dataCurrent.push(dataPoint.weather.temp.cur)
+        // this.labels.push({ time: new Date(dataPoint.dt).getHours(), speed: dataPoint.weather.wind.speed, dir: dataPoint.weather.wind.deg })
+        if (index % 2 !== 0) {
+          this.labels.push('0x0' + String(new Date(dataPoint.dt).getHours()).padStart(2, '0'))
+        } else {
+          this.labels.push('')
+        }
+        // }
+      })
+
+      this.dataLoaded = true
 
       const current = await weather.getCurrent({ units: 'metric' })
 
