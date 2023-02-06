@@ -1,34 +1,109 @@
 <template>
-  <div class="chart">
-    <div class="current-conditions" v-if='dataCurrent.length'>
-      <span>{{ weatherIcon(weather[0].icon) }}</span>
-      <p>{{ weather[0].desc }}</p>
-      <p>{{ Math.round(dataCurrent[0]) }}<em class="wi wi-thermometer"></em></p>
+  <div class="conditions-group">
+    <div v-if='dataCurrent.length'>
+      <h2>Current Conditions</h2>
+      <p>Broken clouds</p>
+    </div>
 
-    </div>
-    <div v-else class="loading">
-      <p>Fetching weather data</p>
-    </div>
-    <div>
-      <Line id="chart" v-if="fontsLoaded && dataLoaded" :chart-data="chartData" :chart-options="chartOptions" :plugins="[chartPlugins]"/>
+  </div>
+  <div class="name-group">
+    <div class="header">
+      <h2>Forecast</h2>
+      <h4>Temperature</h4>
+      <button>Temperature</button>
     </div>
   </div>
-  <div id="preloadfont">&nbsp;</div>
+  <div class="table-group">
+    <div class="tables">
+      <div :class="{top: visibleData[0]}" class="weather-data">
+        <table>
+          <thead>
+            <tr>
+              <th>12:00</th>
+              <th>13:00</th>
+              <th>14:00</th>
+              <th>15:00</th>
+              <th>16:00</th>
+              <th>17:00</th>
+              <th>18:00</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td v-for="(value, index) in dataCurrent" :key="value + '_' + index">{{ value }}&deg;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div :class="{top: visibleData[1]}" class="weather-data">
+        <table>
+          <thead>
+            <tr>
+              <th>12:00</th>
+              <th>13:00</th>
+              <th>14:00</th>
+              <th>15:00</th>
+              <th>16:00</th>
+              <th>17:00</th>
+              <th>18:00</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td v-for="(value, index) in dataCurrent" :key="value + '_' + index">{{ Math.ceil(value/10) }}&deg;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div :class="{top: visibleData[2]}" class="weather-data">
+        <table>
+          <thead>
+            <tr>
+              <th>12:00</th>
+              <th>13:00</th>
+              <th>14:00</th>
+              <th>15:00</th>
+              <th>16:00</th>
+              <th>17:00</th>
+              <th>18:00</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td v-for="(value, index) in dataCurrent" :key="value + '_' + index">{{ Math.ceil(value*3.6) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="chart-group">
+    <div class="charts">
+      <Line :class="{top: visibleData[0]}" class="chart" v-if="fontsLoaded && dataLoaded" :chart-data="temperatureData" :chart-options="chartOptions" :plugins="[chartPlugins]"/>
+      <Line :class="{top: visibleData[1]}" class="chart" v-if="fontsLoaded && dataLoaded" :chart-data="windDirectionData" :chart-options="chartOptions" :plugins="[chartPlugins]"/>
+      <Line :class="{top: visibleData[2]}" class="chart" v-if="fontsLoaded && dataLoaded" :chart-data="pressureData" :chart-options="chartOptions" :plugins="[chartPlugins]"/>
+    </div>
+  </div>
+  <div class="button-group">
+    <button>T</button>
+    <button>W</button>
+    <button>S</button>
+  </div>
 </template>
 
 <script>
-import OpenWeatherAPI from 'openweather-api-node'
+// import OpenWeatherAPI from 'openweather-api-node'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
 import { Line } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Legend, LineElement, PointElement, CategoryScale, LinearScale, Filler } from 'chart.js'
+import { Chart as ChartJS, Title, Legend, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip } from 'chart.js'
 
-ChartJS.register(Title, Legend, LineElement, PointElement, CategoryScale, LinearScale, ChartDataLabels, Filler)
-
+ChartJS.register(Title, Legend, LineElement, PointElement, CategoryScale, LinearScale, ChartDataLabels, Filler, Tooltip)
+/*
 const weather = new OpenWeatherAPI({
   key: '1835dad453aa19a5d4dba6d784dc52c3',
   units: 'metric'
 })
-
+*/
 export default {
   name: 'LineChart',
   components: { Line },
@@ -47,10 +122,17 @@ export default {
       pointBackgroundColor: '#18618c',
       location: this.defaultLocation,
       weather: [],
-      dataCurrent: [],
+      dataCurrent: [7.1, 7.3, 7.0, 7.6, 7.7, 8, 8.2, 8.1],
+      colorGradients: {
+        one: '214, 40, 40',
+        two: '247, 127, 0',
+        three: '252, 191, 73',
+        four: '74,193,207'
+      },
       dataPast: [],
-      labels: [],
+      labels: ['', '', '', '', '', '', '', ''],
       pointRadius: [],
+      visibleData: [true, false, false],
       iconMapping: {
         '01d': '0xf00d', // clear sky - wi-day-sunny
         '02d': '0xf002', // few clouds - wi-day-cloudy
@@ -74,47 +156,172 @@ export default {
     }
   },
   computed: {
-    chartData () {
+    temperatureData () {
       return {
         labels: this.labels,
         datasets: [
           {
             data: this.dataCurrent,
-            borderColor: '#fff',
-            borderWidth: 2,
-            tension: 0.3,
-            pointBackgroundColor: this.pointBackgroundColor,
-            pointBorderColor: '#fff',
-            pointRadius: function (value, ctx) {
-              return value.dataset.data.map((point, index, values) => {
-                const max = Math.max(...values.slice(1, -1))
-                const min = Math.min(...values.slice(1, -1))
-                return point === max || point === min ? 4 : 0
-              })
-            },
-            pointBorderWidth: function (value, ctx) {
-              return value.dataset.data.map((point, index, values) => {
-                const max = Math.max(...values.slice(1, -1))
-                const min = Math.min(...values.slice(1, -1))
-                return point === max || point === min ? 2 : 0
-              })
-            },
-            datalabels: {
-              labels: {
-                label: {
-                  align: 'top',
-                  formatter: function (value, ctx, index) {
-                    return (value === Math.min(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xb0') : null
-                  }
-                },
-                value: {
-                  align: 'bottom',
-                  formatter: function (value, ctx, index) {
-                    return (value === Math.max(...ctx.chart.data.datasets[0].data.slice(1, -1)) && index !== 0 && index !== ctx.chart.data.datasets[0].data.length) ? value.toFixed(1) + String.fromCharCode('0xb0') : null
-                  }
-                },
-                index: null
-              }
+            backgroundColor: (ctx) => {
+              const canvas = ctx.chart.ctx
+              const gradient = canvas.createLinearGradient(0, 0, 0, 300)
+              gradient.addColorStop(1, 'rgba(' + this.colorGradients.one + ', 1')
+              gradient.addColorStop(0, this.getRandomRgb())
+
+              return gradient
+            }
+          }
+        ]
+      }
+    },
+    windSpeedData () {
+      return {
+        labels: this.labels,
+        datasets: [
+          {
+            data: [
+              this.randomBetween(0, 100),
+              this.randomBetween(0, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(40, 100),
+              this.randomBetween(50, 100),
+              this.randomBetween(60, 100)
+            ],
+            backgroundColor: (ctx) => {
+              const canvas = ctx.chart.ctx
+              const gradient = canvas.createLinearGradient(0, 0, 0, 300)
+              gradient.addColorStop(1, 'rgba(' + this.colorGradients.two + ', 1')
+              gradient.addColorStop(0, this.getRandomRgb())
+
+              return gradient
+            }
+          }
+        ]
+      }
+    },
+    windChillData () {
+      return {
+        labels: this.labels,
+        datasets: [
+          {
+            data: [
+              this.randomBetween(0, 100),
+              this.randomBetween(0, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(40, 100),
+              this.randomBetween(50, 100),
+              this.randomBetween(60, 100)
+            ],
+            backgroundColor: (ctx) => {
+              const canvas = ctx.chart.ctx
+              const gradient = canvas.createLinearGradient(0, 0, 0, 300)
+              gradient.addColorStop(1, 'rgba(' + this.colorGradients.three + ', 1')
+              gradient.addColorStop(0, this.getRandomRgb())
+
+              return gradient
+            }
+          }
+        ]
+      }
+    },
+    visibilityData () {
+      return {
+        labels: [
+          this.randomBetween(0, 100),
+          this.randomBetween(0, 100),
+          this.randomBetween(20, 100),
+          this.randomBetween(20, 100),
+          this.randomBetween(20, 100),
+          this.randomBetween(40, 100),
+          this.randomBetween(50, 100),
+          this.randomBetween(60, 100)
+        ],
+        datasets: [
+          {
+            data: [
+              this.randomBetween(0, 100),
+              this.randomBetween(0, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(40, 100),
+              this.randomBetween(50, 100),
+              this.randomBetween(60, 100)
+            ],
+            backgroundColor: (ctx) => {
+              const canvas = ctx.chart.ctx
+              const gradient = canvas.createLinearGradient(0, 0, 0, 300)
+              gradient.addColorStop(1, 'rgba(' + this.colorGradients.two + ', 1')
+              gradient.addColorStop(0, this.getRandomRgb())
+
+              return gradient
+            }
+          }
+        ]
+      }
+    },
+    pressureData () {
+      return {
+        labels: this.labels,
+        datasets: [
+          {
+            data: [
+              this.randomBetween(0, 100),
+              this.randomBetween(0, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(40, 100),
+              this.randomBetween(50, 100),
+              this.randomBetween(60, 100)
+            ],
+            backgroundColor: (ctx) => {
+              const canvas = ctx.chart.ctx
+              const gradient = canvas.createLinearGradient(0, 0, 0, 300)
+              gradient.addColorStop(1, 'rgba(' + this.colorGradients.two + ', 1')
+              gradient.addColorStop(0, this.getRandomRgb())
+
+              return gradient
+            }
+          }
+        ]
+      }
+    },
+    windDirectionData () {
+      return {
+        labels: [
+          this.randomBetween(0, 100),
+          this.randomBetween(0, 100),
+          this.randomBetween(20, 100),
+          this.randomBetween(20, 100),
+          this.randomBetween(20, 100),
+          this.randomBetween(40, 100),
+          this.randomBetween(50, 100),
+          this.randomBetween(60, 100)
+        ],
+        datasets: [
+          {
+            data: [
+              this.randomBetween(0, 100),
+              this.randomBetween(0, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(20, 100),
+              this.randomBetween(40, 100),
+              this.randomBetween(50, 100),
+              this.randomBetween(60, 100)
+            ],
+            backgroundColor: (ctx) => {
+              const canvas = ctx.chart.ctx
+              const gradient = canvas.createLinearGradient(0, 0, 0, 300)
+              gradient.addColorStop(1, 'rgba(' + this.colorGradients.three + ', 1')
+              gradient.addColorStop(0, this.getRandomRgb())
+
+              return gradient
             }
           }
         ]
@@ -127,41 +334,82 @@ export default {
             display: false
           },
           datalabels: {
+            display: function (context) {
+              return context.chart.data.labels[0] === 1
+            },
             color: '#fff',
             font: {
               size: 20,
-              family: '"Quicksand", sans-serif'
+              family: '"Gill Sans", sans-serif'
+            }
+          },
+          tooltip: {
+            enabled: false,
+            displayColors: false,
+            backgroundColor: '#ffffff',
+            position: 'nearest',
+            caretSize: 10,
+            bodyColor: '#000000',
+            bodyFont: {
+              family: 'Gill Sans',
+              size: 14,
+              weight: 'normal'
             },
-            padding: 14
+            padding: 10,
+            callbacks: {
+              title: () => null,
+              label: function (context) {
+                let label = context.dataset.label || ''
+                if (label) {
+                  label += ': '
+                }
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y + '°'
+                }
+                return label
+              }
+            }
           }
+        },
+        elements: {
+          point: {
+            radius: 0,
+            hoverRadius: 0
+          },
+          line: {
+            tension: 0.4,
+            fill: 'start',
+            borderWidth: 0
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          intersect: false,
+          axis: 'xy'
         },
         scales: {
           x: {
+            display: false,
+            ticks: {
+              display: false
+            },
             grid: {
-              display: true,
               color: function (context) {
-                if (context.tick.value % 2 === 0) {
-                  return '#f2f2f233'
-                } else {
+                if (context.tick.value === 0) {
                   return '#ffffff00'
+                } else {
+                  return '#ffffff'
                 }
               },
-              drawBorder: false
-            },
-            display: true,
-            position: 'top',
-            ticks: {
-              color: '#fff',
-              font: {
-                size: 0,
-                family: '"weathericons", "Quicksand", sans-serif'
-              },
-              display: false
+              lineWidth: 0.5
             }
           },
           y: {
             display: false,
-            grace: '4%'
+            grid: {
+              drawBorder: false
+            },
+            grace: '10%'
           }
         },
         layout: {
@@ -175,65 +423,44 @@ export default {
         responsive: true,
         clip: false,
         maintainAspectRatio: false,
-        animation: false,
-        tooltips: {
-          enabled: true
-        },
-        hover: {
-          mode: null
-        }
+        animation: false
       }
     },
     chartPlugins () {
       return {
-        id: 'instrucitons',
-        afterRender: chart => {
-          const ctx = chart.ctx
-          // console.log(chart.scales.x.ticks)
-          ctx.textAlign = 'center'
-          ctx.fillStyle = 'white'
-          ctx.font = 'bold 16px weathericons'
-
-          chart.scales.x.ticks.forEach((tick, index, ticks) => {
-            if (index !== 0 && index !== ticks.length && index !== ticks.length - 1) {
-              ctx.fillText(tick.label, (chart.width / (ticks.length - 1)) * index, 20)
-            }
-          })
-          ctx.restore()
-
-          ctx.textAlign = 'center'
-          ctx.fillStyle = 'white'
-          ctx.font = 'bold 16px Quicksand'
-          ctx.fillText(String.fromCharCode(0x2733) + ' data shown for two hourly intervals', chart.width / 2, chart.height - 20)
-          ctx.restore()
+        id: 'labels',
+        beforeEvent: (chart, args) => {
+          if (args.event.type === 'click' || args.event.type === 'touchstart' || args.event.type === 'mousemove') {
+            const index = Math.round(0.5 + (args.event.x * 7 / chart.width)) // chart.scales.x.getValueForPixel(args.event.x)
+            document.querySelectorAll('tr td:nth-child(' + index + ')').forEach((item, i) => {
+              if (!item.classList.contains('highlight')) {
+                item.classList.add('highlight')
+                setInterval(function () {
+                  item.classList.remove('highlight')
+                }, 1000)
+              }
+            })
+          }
         }
       }
     }
   },
   methods: {
-    weatherIcon (icon) {
-      return String.fromCharCode(this.iconMapping[icon])
+    stopwatch () {
+      setInterval(function () {
+        this.visibleData.push(this.visibleData.shift())
+        this.labels[0] = new Date()
+      }.bind(this), 5000)
     },
-    windDirection (dir) {
-      if (dir > 337.5 || dir <= 22.5) {
-        return String.fromCharCode(0xf044) + 'N' // from N
-      } else if (dir > 22.5 && dir <= 67.5) {
-        return String.fromCharCode(0xf043) + 'NE'
-      } else if (dir > 67.5 && dir <= 112.5) {
-        return String.fromCharCode(0xf048) + 'E' // from E
-      } else if (dir > 112.5 && dir <= 157.5) {
-        return String.fromCharCode(0xf087) + 'SE'
-      } else if (dir > 157.5 && dir <= 202.5) {
-        return String.fromCharCode(0xf058) + 'S'
-      } else if (dir > 202.5 && dir <= 247.5) {
-        return String.fromCharCode(0xf057) + 'SW'
-      } else if (dir > 247.5 && dir <= 292.5) {
-        return String.fromCharCode(0xf04d) + 'W'
-      } else if (dir > 292.5 && dir <= 337.5) {
-        return String.fromCharCode(0xf088) + 'NW'
-      } else {
-        return null
-      }
+    randomBetween (min, max) {
+      return min + Math.floor(Math.random() * (max - min + 1))
+    },
+    getRandomRgb () {
+      const num = Math.round(0xffffff * Math.random())
+      const r = num >> 16
+      const g = num >> 8 & 255
+      const b = num & 255
+      return 'rgba(' + r + ', ' + g + ', ' + b + ', 1)'
     },
     toBeaufort (speed) {
       if (speed > 0 && speed <= 0.2) {
@@ -257,6 +484,7 @@ export default {
       }
     },
     async changeLocation () {
+      /*
       weather.setLocationByName(this.defaultLocation)
 
       let err = null
@@ -268,7 +496,7 @@ export default {
       }
 
       if (err) return
-
+      console.log(weather.getEverything())
       const tomorrow = await weather.getHourlyForecast(12)
 
       let yesterday = []
@@ -290,28 +518,9 @@ export default {
         }
         // }
       })
-
+      */
       this.dataLoaded = true
 
-      const current = await weather.getCurrent({ units: 'metric' })
-
-      if (Date.now() / 1000 > current.astronomical.sunset_raw && Date.now() / 1000 < current.astronomical.sunrise_raw + Math.pow(8.64, 7) && this.weather[0]) {
-        if (this.weather[0].desc.indexOf('clear') > -1) {
-          document.body.style.backgroundColor = '#222'
-          this.pointBackgroundColor = '#222'
-        } else {
-          document.body.style.backgroundColor = '#444'
-          this.pointBackgroundColor = '#444'
-        }
-      } else if (this.weather[0]) {
-        if (this.weather[0].desc.indexOf('clear') > -1 && Math.round(this.dataCurrent[0]) > 16) {
-          document.body.style.backgroundColor = '#d3273e'
-          this.pointBackgroundColor = '#d3273e'
-        } else {
-          document.body.style.backgroundColor = this.defaultBackground
-          this.pointBackgroundColor = '#18618c'
-        }
-      }
       // console.log(this.weather)
       // weather.setLocationByName(this.location)
     },
@@ -336,6 +545,7 @@ export default {
     document.fonts.ready.then(() => {
       this.fontsLoaded = true
     })
+    this.stopwatch()
   }
 }
 

@@ -22,11 +22,4 @@ export default {
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@200;400;600&display=swap');
-
-#app {
-  font-family: 'Quicksand', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
 </style>

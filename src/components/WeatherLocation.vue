@@ -1,5 +1,4 @@
 <template>
-  <div class="location">
     <div class="header-group" :class="{ edit: editMode }">
       <form @submit.prevent='$emit("update:defaultLocation", this.location)'>
         <fieldset>
@@ -22,6 +21,7 @@
         </fieldset>
 
       </form>
+      <p>Some link to location map</p>
       <ul v-if="locationOptions.length" id="locations" ref="locations">
         <li v-for="(location, index) in locationOptions"
             :tabindex="index + 2"
@@ -31,7 +31,6 @@
         </li>
       </ul>
     </div>
-  </div>
 </template>
 
 <script>
@@ -48,7 +47,7 @@ export default {
     return {
       locationOptions: [],
       location: this.defaultLocation,
-      locationWidth: this.defaultLocation.length + 3 + 'ch',
+      locationWidth: this.defaultLocation.length + 2 + 'ch',
       editMode: false
     }
   },
@@ -59,11 +58,11 @@ export default {
       this.locationOptions = data.data
     },
     adjustWidth (chars) {
-      this.locationWidth = Math.ceil(chars + 3 * 1.25) + 'ch'
+      this.locationWidth = Math.ceil(chars + 2.25) + 'ch'
     },
     updateLocation (name, country) {
       this.location = `${name}, ${country}`
-      this.adjustWidth(this.location.length)
+      this.adjustWidth(this.location.replace(' ', '').length)
       this.locationOptions = []
       this.$refs.location_input.focus()
     },
