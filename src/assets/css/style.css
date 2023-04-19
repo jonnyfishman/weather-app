@@ -79,7 +79,21 @@ p {
 }
 
 h3 {
-  margin: 40px 0 0;
+  display: inline-block;
+padding: 0.2em;
+text-transform: uppercase;
+font-size: 70%;
+margin: 0.5em;
+cursor: pointer;
+border-bottom: 1px solid rgba(0,0,0,0);
+}
+h3.highlight, h3:hover {
+border-bottom: 1px solid white;
+}
+
+.doughnut {
+  height:50px;
+  display: inline-block;
 }
 
 #app {
@@ -91,21 +105,24 @@ h3 {
 }
 
 
-.header-group, .header {
+.header-group {
 
-  position:relative;
-
-
-  flex:0 1 auto;
-
-  margin:1em;
+  
+  background: coral;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-bottom: 1px solid firebrick;
+  height: 20vh;
+  width: 100%;
+  z-index:100;
+  padding:0.5em;
 
 }
-.conditions-group {
+.conditions-group, .name-group {
   flex:0 1 auto;
   position: relative;
   margin:0 1em;
-border-top: 1px solid #ccc;
+  height:40vh;
 }
 .table-group {
   flex:0 1 auto;
@@ -114,7 +131,7 @@ border-top: 1px solid #ccc;
 
 }
 .header {
-  border-top: 1px solid #ccc;
+  margin: 1em auto;
 }
 
 
@@ -130,10 +147,11 @@ table {
   -ms-user-select: none;      /* IE 10+ */
   user-select: none;
 }
-table td {
+td {
   transition:0.3s ease-in-out;
+  vertical-align: middle;
 }
-table td:last-child {
+.tables table td:last-child, .tables table th:last-child {
   display:none;
 }
 table td.highlight {
@@ -188,7 +206,7 @@ div.weather-data h4 {
 
 }
 .button-group {
-  display: flex;
+  display: none;
   position: absolute;
   bottom: 0;
   width: 100%;
@@ -235,7 +253,7 @@ cursor: pointer;
 
   position: absolute;
 transition:0.1s ease-in;
-opacity:0.7;
+opacity:0.5;
 }
 div.chart.top {
   z-index:999;
@@ -390,6 +408,10 @@ width: 100%;
   border-bottom:1px solid rgba(0,0,0,0);
 }
 
+.table-group th i {
+  font-size:2em;
+}
+
 @media (min-width: 800px) {
   .charts {
     position: relative;
@@ -430,4 +452,39 @@ width: 100%;
   .table-group {
     flex:0 1 auto;
   }
+}
+
+.conditions-group td span {
+  display: inline-block;
+  vertical-align: sub;
+}
+.conditions-group td svg, .conditions-group td i {
+  display: inline-block;
+  vertical-align: middle;
+}
+.conditions-group td svg {
+  height:3em;
+}
+.conditions-group {
+  height:60vh;
+  
+  text-align: center;
+}
+.arrows {
+  height:20vh;
+}
+.table-group {
+  height:10vh;
+}
+.chart-group {
+  height:50vh;
+}
+
+.chart:after {
+  /*content: attr(title);
+  position:absolute;
+  bottom:0.5em;
+  text-align: center;
+  width:100%;
+  text-transform: uppercase;*/
 }

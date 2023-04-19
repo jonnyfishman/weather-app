@@ -21,7 +21,6 @@
         </fieldset>
 
       </form>
-      <p>Some link to location map</p>
       <ul v-if="locationOptions.length" id="locations" ref="locations">
         <li v-for="(location, index) in locationOptions"
             :tabindex="index + 2"

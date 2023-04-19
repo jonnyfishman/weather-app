@@ -11,7 +11,13 @@ module.exports = {
   ],
 
   parserOptions: {
-    parser: '@babel/eslint-parser'
+    parser: '@babel/eslint-parser',
+    babelOptions: {
+      plugins: [
+        ['@babel/plugin-proposal-private-methods', { loose: true }],
+        ['@babel/plugin-proposal-class-properties', { loose: true }]
+      ]
+    }
   },
 
   rules: {
