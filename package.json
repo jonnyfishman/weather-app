@@ -16,7 +16,8 @@
     "mysql": "^2.18.1",
     "openweather-api-node": "^2.1.2",
     "vue": "^3.2.47",
-    "vue-chartjs": "^5.2.0"
+    "vue-chartjs": "^5.2.0",
+    "vuex": "^4.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.21.4",

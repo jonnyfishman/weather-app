@@ -1,6 +1,6 @@
 <template>
     <div class="header-group" :class="{ edit: editMode }">
-      <form @submit.prevent='$emit("update:defaultLocation", this.location)'>
+      <form @submit.prevent='$store.dispatch("updateLocation", this.location)'>
         <fieldset>
           <legend for="location_input">Choose a new location</legend>
           <input  id="location_input"
@@ -34,21 +34,22 @@
 
 <script>
 // use v-model so as one way and then return to parent with emit when complete
+import { mapState } from 'vuex'
 
 export default {
-  props: {
-    defaultLocation: {
-      type: String,
-      required: true
-    }
-  },
   data () {
     return {
+      newLocation: '',
       locationOptions: [],
-      location: this.defaultLocation,
-      locationWidth: this.defaultLocation.length + 2 + 'ch',
+      location: this.storedLocation,
+      locationWidth: '10ch', // this.location.length + 2 + 'ch',
       editMode: false
     }
+  },
+  computed: {
+    ...mapState({
+      storedLocation: state => state.location
+    })
   },
   methods: {
     async loadLocationOptions () {
@@ -60,8 +61,8 @@ export default {
       this.locationWidth = Math.ceil(chars + 2.25) + 'ch'
     },
     updateLocation (name, country) {
-      this.location = `${name}, ${country}`
-      this.adjustWidth(this.location.replace(' ', '').length)
+      this.newLocation = `${name}, ${country}`
+      this.adjustWidth(this.newLocation.replace(' ', '').length)
       this.locationOptions = []
       this.$refs.location_input.focus()
     },
@@ -69,7 +70,7 @@ export default {
       if (this.$refs.locations) this.$refs.location_input.focus()
       else {
         this.editMode = false
-        this.$emit('update:defaultLocation', this.location)
+        // this.$store.dispatch('updateLocation', this.location)
       }
     }
   },

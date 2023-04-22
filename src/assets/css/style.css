@@ -244,20 +244,19 @@ cursor: pointer;
 .charts {
   position: absolute;
 }
-.charts div.chart {
+.charts .chart {
   flex:1 1 auto;
 
-  width:100%;
-  height:100%;
   bottom:0;
 
   position: absolute;
 transition:0.1s ease-in;
 opacity:0.5;
 }
-div.chart.top {
+.chart.top {
   z-index:999;
   opacity: 1;
+
 }
 
 .charts, .tables {

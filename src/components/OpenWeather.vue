@@ -2,7 +2,7 @@
   <div class="conditions-group">
     <div v-if='weather.time.length'>
 
-      <p>Saturday 12th August</p>
+      <p>{{ weather.date[0] }}</p>
       <i style="font-size:8em" :class="'wi-' + weather.icon[0]"></i>
       <p style="font-size:1.6em;margin:0.4em;">{{ weather.description[0] }}</p>
       <table>
@@ -61,13 +61,24 @@
   <div class="chart-group">
     <div class="charts">
       <template v-if="fontsLoaded && dataLoaded">
-        <Line v-for="(graph, name, index) in weather.graphs" :key="'graph' + name" :class="{'top': index === visibleIndex}" class="chart" :title="graph.label" :chart-data="graphData(graph.data)" :chart-options="chartOptions(Math.min( ...graph.data ), Math.max( ...graph.data ))" :plugins="[chartPlugins]"/>
+        <Line
+          v-for="(graph, name, index) in weather.graphs"
+          :key="'graph_' + name"
+          :class="{'top': index === visibleIndex}"
+          class="chart"
+          :title="graph.label"
+          :data="graphData(graph.data)"
+          :options="chartOptions(Math.min( ...graph.data ), Math.max( ...graph.data ))"
+          :plugins="[chartPlugins]"
+        />
       </template>
     </div>
   </div>
 </template>
 
 <script>
+// import { LocalDateTime, DateTimeFormatter } from '@js-joda/core'
+import { mapState } from 'vuex'
 import OpenWeatherAPI from 'openweather-api-node'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
 import ScrollDown from './scrollDown.vue'
@@ -87,62 +98,11 @@ export default {
     Line,
     ScrollDown
   },
-  props: {
-    defaultLocation: {
-      type: String,
-      required: true
-    }
-  },
   data () {
     return {
       fontsLoaded: false,
       dataLoaded: false,
-      defaultBackground: '#185D8C',
-      pointBackgroundColor: '#18618c',
-      location: this.defaultLocation,
       visibleIndex: 0,
-      weather: {
-        description: [],
-        icon: [],
-        time: [],
-        graphs: {
-          temperature: {
-            label: 'Temperature',
-            data: [],
-            unit: '°'
-          },
-          windChill: {
-            label: 'Windchill',
-            data: [],
-            unit: '°'
-          },
-          pop: {
-            label: 'Chance of rain',
-            data: [],
-            unit: '%'
-          },
-          pressure: {
-            label: 'Pressure',
-            data: [],
-            unit: 'Pa'
-          },
-          windSpeed: {
-            label: 'Wind Speed',
-            data: [],
-            unit: ''
-          },
-          gustSpeed: {
-            label: 'Gust Speed',
-            data: [],
-            unit: ''
-          },
-          windDirection: {
-            label: 'Wind Direction',
-            data: [],
-            unit: '°'
-          }
-        }
-      },
       colorGradients: {
         one: '214, 40, 40',
         two: '247, 127, 0',
@@ -152,6 +112,10 @@ export default {
     }
   },
   computed: {
+    ...mapState({
+      weather: state => state.weather,
+      location: state => state.location
+    }),
     chartPlugins () {
       return {
         id: 'labels',
@@ -172,6 +136,27 @@ export default {
     }
   },
   methods: {
+    toBeaufort (speed) {
+      if (speed > 0 && speed <= 0.2) {
+        return 'F1'
+      } else if (speed > 0.2 && speed <= 1.5) {
+        return 'F2'
+      } else if (speed > 1.5 && speed <= 3.3) {
+        return 'F3'
+      } else if (speed > 3.3 && speed <= 5.4) {
+        return 'F4'
+      } else if (speed > 5.4 && speed <= 7.9) {
+        return 'F5'
+      } else if (speed > 7.9 && speed <= 10.7) {
+        return 'F6'
+      } else if (speed > 10.7 && speed <= 13.8) {
+        return 'F7'
+      } else if (speed > 13.8 && speed <= 17.1) {
+        return 'F8'
+      } else {
+        return '>F8'
+      }
+    },
     chartOptions (min, max) {
       return {
         plugins: {
@@ -248,29 +233,8 @@ export default {
       const b = num & 255
       return 'rgba(' + r + ', ' + g + ', ' + b + ', 1)'
     },
-    toBeaufort (speed) {
-      if (speed > 0 && speed <= 0.2) {
-        return 'F1'
-      } else if (speed > 0.2 && speed <= 1.5) {
-        return 'F2'
-      } else if (speed > 1.5 && speed <= 3.3) {
-        return 'F3'
-      } else if (speed > 3.3 && speed <= 5.4) {
-        return 'F4'
-      } else if (speed > 5.4 && speed <= 7.9) {
-        return 'F5'
-      } else if (speed > 7.9 && speed <= 10.7) {
-        return 'F6'
-      } else if (speed > 10.7 && speed <= 13.8) {
-        return 'F7'
-      } else if (speed > 13.8 && speed <= 17.1) {
-        return 'F8'
-      } else {
-        return '>F8'
-      }
-    },
     async changeLocation () {
-      weather.setLocationByName(this.defaultLocation)
+      weather.setLocationByName(this.location)
 
       let err = null
       let weatherData = null
@@ -283,120 +247,8 @@ export default {
       }
 
       if (err) return
+      this.$store.dispatch('updateWeather', weatherData)
 
-      for (let index = 0; index < 8; index++) {
-        this.weather.description[index] = weatherData[index].weather.description
-        this.weather.icon[index] = weatherData[index].weather.icon.raw
-        this.weather.time[index] = String(weatherData[index].dt.getHours()).padStart(2, '0') + ':00'
-        this.weather.graphs.temperature.data[index] = weatherData[index].weather.temp.cur.toFixed(1)
-        this.weather.graphs.windChill.data[index] = weatherData[index].weather.feels_like.cur.toFixed(1)
-        this.weather.graphs.pop.data[index] = String(Math.floor(weatherData[index].weather.pop * 100))
-        this.weather.graphs.pressure.data[index] = String(weatherData[index].weather.pressure)
-        this.weather.graphs.windSpeed.data[index] = weatherData[index].weather.wind.speed.toFixed(1)
-        this.weather.graphs.gustSpeed.data[index] = weatherData[index].weather.wind.gust.toFixed(1)
-        this.weather.graphs.windDirection.data[index] = String(weatherData[index].weather.wind.deg)
-      }
-
-      /*
-      this.weather.description = [
-        'clear sky',
-        'few clouds',
-        'scattered clouds',
-        'scattered clouds',
-        'broken clouds',
-        'broken clouds',
-        'overcast clouds'
-      ]
-      this.weather.icon = [
-        '01d',
-        '01d',
-        '02d',
-        '02d',
-        '01d',
-        '02d',
-        '03d'
-      ]
-      this.weather.time = [
-        '14:00',
-        '15:00',
-        '16:00',
-        '17:00',
-        '18:00',
-        '19:00',
-        '20:00',
-        '21:00'
-      ]
-      this.weather.graphs.temperature.data = [
-        11.8,
-        11.4,
-        10.9,
-        10.3,
-        9.5,
-        8.1,
-        7.9,
-        7.3
-      ]
-      this.weather.graphs.windChill.data = [
-        11.8,
-        11.4,
-        10.9,
-        10.3,
-        9.5,
-        8.1,
-        7.9,
-        5.2
-      ]
-      this.weather.graphs.pop.data = [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ]
-      this.weather.graphs.pressure.data = [
-        1029,
-        1029,
-        1029,
-        1029,
-        1028,
-        1028,
-        1029,
-        1029
-      ]
-      this.weather.graphs.windSpeed.data = [
-        8.9,
-        8.4,
-        8.3,
-        7.6,
-        6.8,
-        6.5,
-        6.6,
-        6.2
-      ]
-      this.weather.graphs.gustSpeed.data = [
-        12.5,
-        11.8,
-        11.5,
-        11.4,
-        11.1,
-        11.7,
-        12.2,
-        12.1
-      ]
-      this.weather.graphs.windDirection.data = [
-        65,
-        65,
-        67,
-        69,
-        67,
-        61,
-        59,
-        58
-      ]
-      */
       console.log(this.weather)
 
       this.dataLoaded = true
@@ -404,9 +256,6 @@ export default {
       // console.log(this.weather)
       // weather.setLocationByName(this.location)
     }
-  },
-  watch: {
-    defaultLocation () { this.changeLocation() }
   },
   async created () {
     await this.changeLocation()
@@ -432,90 +281,7 @@ export default {
 
 <!-- Add 'scoped' attribute to limit CSS to this component only -->
 <style scoped>
-.arrows {
-  position: relative;
-  cursor: pointer;
-  margin:auto;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-
-}
-
-.arrow {
-  display: block;
-  width: 5px;
-  height: 5px;
-  -ms-transform: rotate(45deg); /* IE 9 */
-  -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
-  transform: rotate(45deg);
-
-  border-right: 2px solid white;
-  border-bottom: 2px solid white;
-  margin: 0 0 3px 4px;
-
-  width: 16px;
-  height: 16px;
-  -webkit-animation: mouse-scroll 1s infinite;
-    -moz-animation: mouse-scroll 1s infinite;
-    animation: mouse-scroll 1s infinite;
-}
-
-.arrow:nth-child(1) {
-  -webkit-animation-delay: .1s;
-  -moz-animation-delay: .1s;
-  -webkit-animation-direction: alternate;
-
-  animation-direction: alternate;
-  animation-delay: alternate;
-}
-
-.arrow:nth-child(2) {
-  -webkit-animation-delay: .2s;
-  -moz-animation-delay: .2s;
-  -webkit-animation-direction: alternate;
-
-  animation-delay: .2s;
-  animation-direction: alternate;
-
-  margin-top: -6px;
-}
-
-.arrow:nth-child(3) {
-  -webkit-animation-delay: .3s;
-  -moz-animation-delay: .3s;
-  -webkit-animation-direction: alternate;
-
-  animation-delay: .3s;
-  animation-direction: alternate;
-
-  margin-top: -6px;
-}
-
-@-webkit-keyframes mouse-scroll {
-
-0%   { opacity: 0;}
-50%  { opacity: .5;}
-100% { opacity: 1;}
-}
-@-moz-keyframes mouse-scroll {
-
-0%   { opacity: 0; }
-50%  { opacity: .5; }
-100% { opacity: 1; }
-}
-@-o-keyframes mouse-scroll {
-
-0%   { opacity: 0; }
-50%  { opacity: .5; }
-100% { opacity: 1; }
-}
-@keyframes mouse-scroll {
-
-0%   { opacity: 0; }
-50%  { opacity: .5; }
-100% { opacity: 1; }
-}
+.
 
 .conditions-group span {
   margin-left: -0.2em;

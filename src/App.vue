@@ -1,6 +1,6 @@
 <template>
   <weather-location v-model:defaultLocation="location" />
-  <open-weather v-model:defaultLocation="location" />
+  <open-weather/>
 </template>
 
 <script>
