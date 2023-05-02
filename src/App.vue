@@ -1,22 +1,28 @@
 <template>
-  <weather-location v-model:defaultLocation="location" />
-  <open-weather v-model:defaultLocation="location" />
+  <weather-location/>
+  <current-conditions/>
+  <forecast-graphs/>
 </template>
 
 <script>
 import WeatherLocation from './components/WeatherLocation.vue'
-import OpenWeather from './components/OpenWeather.vue'
+import currentConditions from './components/currentConditions.vue'
+import forecastGraphs from './components/forecastGraphs.vue'
 
 export default {
   name: 'App',
   components: {
-    OpenWeather,
-    WeatherLocation
+    WeatherLocation,
+    currentConditions,
+    forecastGraphs
   },
   data () {
     return {
-      location: 'Norwich'
+      defaultLocation: 'Norwich'
     }
+  },
+  created () {
+    this.$store.dispatch('updateLocation', this.defaultLocation)
   }
 }
 </script>
