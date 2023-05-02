@@ -40,8 +40,8 @@ export default {
     -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
     transform: rotate(45deg);
 
-    border-right: 2px solid white;
-    border-bottom: 2px solid white;
+    border-right: 2px solid var(--txtColor);
+    border-bottom: 2px solid var(--txtColor);
     margin: 0 0 3px 4px;
 
     width: 16px;

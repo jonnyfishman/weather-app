@@ -1,88 +1,118 @@
 <template>
     <div class="header-group" :class="{ edit: editMode }">
-      <form @submit.prevent='$store.dispatch("updateLocation", this.location)'>
-        <fieldset>
-          <legend for="location_input">Choose a new location</legend>
-          <input  id="location_input"
-                  name="location_input"
-                  ref="location_input"
-                  type="text"
-                  @input="adjustWidth($event.target.value.length); loadLocationOptions()"
-                  :style="{width: locationWidth}"
-                  :disabled="!editMode"
-                  v-model="location"
-                  autocomplete="off"
-                  @keyup.esc="editMode = false"
-                  @focusout="clickOutside"
-                  tabindex="0"
-          />
-          <button tabindex="1" type="submit" @click="editMode = !editMode" />
+        <form @submit.prevent='sendLocation'>
+          <fieldset>
+            <legend for="location_input">Choose a new location</legend>
+            <input  id="location_input"
+                    name="location_input"
+                    ref="location_input"
+                    type="text"
+                    @input="loadLocationOptions()"
+                    :disabled="!editMode"
+                    v-model="location"
+                    autocomplete="off"
+                    tabindex="0"
+            />
+            <button tabindex="1" type="submit"></button>
+          </fieldset>
+          <ul v-show="locationOptions.length && editMode" id="locations" ref="locations">
+          <template v-for="(possibleLocation) in locationOptions" :key="possibleLocation.id">
+            <li v-if="possibleLocation.error">
+              <span class="error">{{ possibleLocation.error }}</span>
+            </li>
+            <li v-else
+              @click="updateLocation(possibleLocation.name, possibleLocation.country)"
+            >
+              {{possibleLocation.name}} ({{ possibleLocation.country }})
+            </li>
+          </template>
+        </ul>
+        </form>
 
-        </fieldset>
-
-      </form>
-      <ul v-if="locationOptions.length" id="locations" ref="locations">
-        <li v-for="(location, index) in locationOptions"
-            :tabindex="index + 2"
-            @click="updateLocation(location.name, location.country)"
-            :key="location.id">
-            {{location.name}} ({{ location.country }})
-        </li>
-      </ul>
     </div>
 </template>
 
 <script>
 // use v-model so as one way and then return to parent with emit when complete
 import { mapState } from 'vuex'
+import { debounce } from 'lodash'
 
 export default {
   data () {
     return {
-      newLocation: '',
+      prevLocation: '',
+      location: '',
       locationOptions: [],
-      location: this.storedLocation,
-      locationWidth: '10ch', // this.location.length + 2 + 'ch',
+      locationWidth: '50%',
       editMode: false
     }
   },
   computed: {
     ...mapState({
-      storedLocation: state => state.location
+      currentLocation: state => state.location
     })
   },
+  created () {
+    this.location = this.currentLocation
+  },
   methods: {
-    async loadLocationOptions () {
-      const response = await fetch('https://cities.jonsalmon.info?name=' + this.location)
-      const data = await response.json()
-      this.locationOptions = data.data
-    },
-    adjustWidth (chars) {
-      this.locationWidth = Math.ceil(chars + 2.25) + 'ch'
+    loadLocationOptions: debounce(async function () {
+      if (this.location.length < 2) return
+
+      const response = await fetch(
+        `https://cities.jonsalmon.info?name=${this.location}`
+      )
+      this.updateLocationOptions(response)
+    }, 150),
+    async updateLocationOptions (response) {
+      if (response.status === 200) {
+        const { data } = await response.json()
+        this.locationOptions = data
+      } else {
+        this.locationOptions = [{ error: 'No city found' }]
+      }
     },
     updateLocation (name, country) {
-      this.newLocation = `${name}, ${country}`
-      this.adjustWidth(this.newLocation.replace(' ', '').length)
-      this.locationOptions = []
-      this.$refs.location_input.focus()
+      this.location = `${name}, ${country}`
+      this.sendLocation()
     },
-    clickOutside () {
-      if (this.$refs.locations) this.$refs.location_input.focus()
-      else {
+    async sendLocation () {
+      this.locationOptions = []
+
+      if (!this.editMode) { // editMode is false
+        this.editMode = true
+        this.prevLocation = this.location
+        await this.$nextTick()
+        this.$refs.location_input.value = null
+        this.$refs.location_input.focus()
+      } else { // editMode is true
         this.editMode = false
-        // this.$store.dispatch('updateLocation', this.location)
+        if (this.location !== 0) this.$store.dispatch('updateLocation', this.location)
+      }
+    },
+    async onKeyDown (event) {
+      // console.log(event.keyCode)
+      if (event.keyCode === 27) { // Check if escape key was pressed
+        this.$refs.location_input.value = null
+        this.editMode = false
+        this.location = this.prevLocation
+      }
+    },
+    touchEvent (event) {
+      if (!document.querySelector('form').contains(event.target)) {
+        this.editMode = false
       }
     }
   },
-  watch: {
-    editMode: function () {
-      if (this.editMode === true) {
-        this.$nextTick(() => {
-          this.$refs.location_input.value = null
-          this.$refs.location_input.focus()
-        })
-      }
-    }
+  mounted () {
+    document.addEventListener('keydown', this.onKeyDown)
+    document.addEventListener('mousedown', this.touchEvent)
+    document.addEventListener('touchstart', this.touchStart)
+  },
+  beforeUnmount () {
+    document.removeEventListener('keydown', this.onKeyDown)
+    document.removeEventListener('mousedown', this.touchEvent)
+    document.removeEventListener('touchstart', this.touchStart)
   }
 }
 </script>
